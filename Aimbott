@@ -10,8 +10,8 @@ local closeButton
 local minimizeButton
 local highlightEnabled = false
 local highlightButton
-local highlightedPlayers = {}  -- To track highlighted players
-local ytLabel -- This will be our new text label for "YT:3SD3"
+local highlightedPlayers = {}
+local ytLabel
 
 local function addHighlight(targetPlayer)
     if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") and not highlightedPlayers[targetPlayer] then
@@ -23,14 +23,14 @@ local function addHighlight(targetPlayer)
         highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
         highlight.OutlineTransparency = 0.5
         highlight.Parent = targetPlayer.Character
-        highlightedPlayers[targetPlayer] = highlight  -- Track highlight
+        highlightedPlayers[targetPlayer] = highlight
     end
 end
 
 local function removeHighlight(targetPlayer)
     if targetPlayer.Character and targetPlayer.Character:FindFirstChild(targetPlayer.Name .. "Highlight") then
         targetPlayer.Character[targetPlayer.Name .. "Highlight"]:Destroy()
-        highlightedPlayers[targetPlayer] = nil  -- Remove from tracked list
+        highlightedPlayers[targetPlayer] = nil
     end
 end
 
@@ -88,13 +88,12 @@ local function createGui()
         end
     end)
 
-    -- Add "YT:3SD3" TextLabel next to minimize button
     ytLabel = Instance.new("TextLabel")
-    ytLabel.Size = UDim2.new(0, 70, 0, 40)  -- Adjust size based on text length
-    ytLabel.Position = UDim2.new(0, 210, 0, 50)  -- Positioned right of minimize button
+    ytLabel.Size = UDim2.new(0, 70, 0, 40)
+    ytLabel.Position = UDim2.new(0, 210, 0, 50)
     ytLabel.Text = "YT:3SD3"
     ytLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ytLabel.BackgroundTransparency = 1  -- Make background transparent
+    ytLabel.BackgroundTransparency = 1
     ytLabel.TextSize = 14
     ytLabel.Font = Enum.Font.SourceSans
     ytLabel.Parent = frame
@@ -119,14 +118,12 @@ local function createGui()
         highlightButton.Text = highlightEnabled and "Highlight: ON" or "Highlight: OFF"
 
         if highlightEnabled then
-            -- Turn on the highlight for all players immediately
             for _, targetPlayer in pairs(game.Players:GetPlayers()) do
                 if targetPlayer ~= player then
                     addHighlight(targetPlayer)
                 end
             end
         else
-            -- Turn off the highlight for all players immediately
             for _, targetPlayer in pairs(game.Players:GetPlayers()) do
                 if targetPlayer ~= player then
                     removeHighlight(targetPlayer)
@@ -165,7 +162,7 @@ local function updateLockAim()
         local headPosition = closestPlayer.Character.Head.Position
         local cameraPosition = camera.CFrame.Position
         local direction = (headPosition - cameraPosition).unit
-        
+
         camera.CFrame = CFrame.new(cameraPosition, headPosition)
     end
 end
@@ -173,14 +170,13 @@ end
 local function highlightLoop()
     while true do
         if highlightEnabled then
-            -- Refresh the highlight list every 5 seconds
             for _, targetPlayer in pairs(game.Players:GetPlayers()) do
                 if targetPlayer ~= player then
-                    addHighlight(targetPlayer)  -- Refresh highlight for all players
+                    addHighlight(targetPlayer)
                 end
             end
         end
-        wait(5)  -- Refresh every 5 seconds
+        wait(5)
     end
 end
 
@@ -192,7 +188,7 @@ local function aimLockLoop()
                 updateLockAim()
             end
         end
-        wait(0.1)  -- Update continuously for smooth aiming
+        wait(0.1)
     end
 end
 
@@ -202,6 +198,5 @@ player.CharacterAdded:Connect(function()
     createGui()
 end)
 
--- Start the independent loops
 spawn(highlightLoop)
 spawn(aimLockLoop)
