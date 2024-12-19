@@ -8,7 +8,8 @@ local screenGui
 local frame
 local closeButton
 local minimizeButton
-local highlightEnabled = true
+local highlightEnabled = false
+local highlightButton
 
 local function addHighlight(targetPlayer)
     if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
@@ -83,17 +84,6 @@ local function createGui()
         end
     end)
 
-    local ytLabel = Instance.new("TextLabel")
-    ytLabel.Size = UDim2.new(0, 90, 0, 40)
-    ytLabel.Position = UDim2.new(0, 210, 0, 50)
-    ytLabel.Text = "YT:3SD3"
-    ytLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ytLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    ytLabel.BackgroundTransparency = 0.7
-    ytLabel.TextSize = 18
-    ytLabel.Font = Enum.Font.SourceSansBold
-    ytLabel.Parent = frame
-
     lockAimButton = Instance.new("TextButton")
     lockAimButton.Size = UDim2.new(0, 270, 0, 40)
     lockAimButton.Position = UDim2.new(0, 10, 0, 100)
@@ -107,12 +97,11 @@ local function createGui()
     highlightButton = Instance.new("TextButton")
     highlightButton.Size = UDim2.new(0, 270, 0, 40)
     highlightButton.Position = UDim2.new(0, 10, 0, 150)
-    highlightButton.Text = "Highlight: ON"
+    highlightButton.Text = "Highlight: OFF"
     highlightButton.Parent = frame
     highlightButton.MouseButton1Click:Connect(function()
         highlightEnabled = not highlightEnabled
         highlightButton.Text = highlightEnabled and "Highlight: ON" or "Highlight: OFF"
-
         for _, targetPlayer in pairs(game.Players:GetPlayers()) do
             if targetPlayer ~= player then
                 if highlightEnabled then
@@ -152,8 +141,10 @@ end
 local function updateLockAim()
     if aimLockEnabled and closestPlayer then
         local headPosition = closestPlayer.Character.Head.Position
-        local direction = (headPosition - camera.CFrame.Position).unit
-        camera.CFrame = CFrame.new(camera.CFrame.Position, headPosition)
+        local cameraPosition = camera.CFrame.Position
+        local direction = (headPosition - cameraPosition).unit
+        
+        camera.CFrame = CFrame.new(cameraPosition, headPosition)
     end
 end
 
@@ -170,4 +161,9 @@ local function mainLoop()
 end
 
 createGui()
-mainLoop()
+
+player.CharacterAdded:Connect(function()
+    createGui()
+end)
+
+spawn(mainLoop)
