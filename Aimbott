@@ -1,0 +1,173 @@
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local camera = workspace.CurrentCamera
+local aimLockEnabled = false
+local closestPlayer = nil
+local lockAimButton
+local screenGui
+local frame
+local closeButton
+local minimizeButton
+local highlightEnabled = true
+
+local function addHighlight(targetPlayer)
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = targetPlayer.Name .. "Highlight"
+        highlight.Adornee = targetPlayer.Character
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.OutlineTransparency = 0.5
+        highlight.Parent = targetPlayer.Character
+    end
+end
+
+local function removeHighlight(targetPlayer)
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild(targetPlayer.Name .. "Highlight") then
+        targetPlayer.Character[targetPlayer.Name .. "Highlight"]:Destroy()
+    end
+end
+
+local function createGui()
+    if screenGui then
+        screenGui:Destroy()
+    end
+
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 200)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.5
+    frame.Parent = screenGui
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(0, 300, 0, 40)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.Text = "SaeedScripts"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    titleLabel.BackgroundTransparency = 0.7
+    titleLabel.TextSize = 20
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Parent = frame
+
+    closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 90, 0, 40)
+    closeButton.Position = UDim2.new(0, 10, 0, 50)
+    closeButton.Text = "Close"
+    closeButton.Parent = frame
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+
+    minimizeButton = Instance.new("TextButton")
+    minimizeButton.Size = UDim2.new(0, 90, 0, 40)
+    minimizeButton.Position = UDim2.new(0, 110, 0, 50)
+    minimizeButton.Text = "Minimize"
+    minimizeButton.Parent = frame
+    minimizeButton.MouseButton1Click:Connect(function()
+        if frame.Size == UDim2.new(0, 300, 0, 200) then
+            lockAimButton.Visible = false
+            highlightButton.Visible = false
+            frame.Size = UDim2.new(0, 300, 0, 100)
+            minimizeButton.Text = "Maximize"
+        else
+            lockAimButton.Visible = true
+            highlightButton.Visible = true
+            frame.Size = UDim2.new(0, 300, 0, 200)
+            minimizeButton.Text = "Minimize"
+        end
+    end)
+
+    local ytLabel = Instance.new("TextLabel")
+    ytLabel.Size = UDim2.new(0, 90, 0, 40)
+    ytLabel.Position = UDim2.new(0, 210, 0, 50)
+    ytLabel.Text = "YT:3SD3"
+    ytLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ytLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    ytLabel.BackgroundTransparency = 0.7
+    ytLabel.TextSize = 18
+    ytLabel.Font = Enum.Font.SourceSansBold
+    ytLabel.Parent = frame
+
+    lockAimButton = Instance.new("TextButton")
+    lockAimButton.Size = UDim2.new(0, 270, 0, 40)
+    lockAimButton.Position = UDim2.new(0, 10, 0, 100)
+    lockAimButton.Text = "Lock Aim: OFF"
+    lockAimButton.Parent = frame
+    lockAimButton.MouseButton1Click:Connect(function()
+        aimLockEnabled = not aimLockEnabled
+        lockAimButton.Text = aimLockEnabled and "Lock Aim: ON" or "Lock Aim: OFF"
+    end)
+
+    highlightButton = Instance.new("TextButton")
+    highlightButton.Size = UDim2.new(0, 270, 0, 40)
+    highlightButton.Position = UDim2.new(0, 10, 0, 150)
+    highlightButton.Text = "Highlight: ON"
+    highlightButton.Parent = frame
+    highlightButton.MouseButton1Click:Connect(function()
+        highlightEnabled = not highlightEnabled
+        highlightButton.Text = highlightEnabled and "Highlight: ON" or "Highlight: OFF"
+
+        for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                if highlightEnabled then
+                    addHighlight(targetPlayer)
+                else
+                    removeHighlight(targetPlayer)
+                end
+            end
+        end
+    end)
+end
+
+local function findNearestPlayerHead()
+    local nearestPlayer = nil
+    local shortestDistance = math.huge
+
+    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+        if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+            local headPosition = targetPlayer.Character.Head.Position
+            local distance = (headPosition - camera.CFrame.Position).magnitude
+
+            local ray = Ray.new(camera.CFrame.Position, (headPosition - camera.CFrame.Position).unit * distance)
+            local hit, position = workspace:FindPartOnRay(ray, player.Character)
+
+            if not hit or hit.Parent == targetPlayer.Character then
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    nearestPlayer = targetPlayer
+                end
+            end
+        end
+    end
+
+    return nearestPlayer
+end
+
+local function updateLockAim()
+    if aimLockEnabled and closestPlayer then
+        local headPosition = closestPlayer.Character.Head.Position
+        local direction = (headPosition - camera.CFrame.Position).unit
+        camera.CFrame = CFrame.new(camera.CFrame.Position, headPosition)
+    end
+end
+
+local function mainLoop()
+    while true do
+        if aimLockEnabled then
+            closestPlayer = findNearestPlayerHead()
+            if closestPlayer then
+                updateLockAim()
+            end
+        end
+        wait(0.1)
+    end
+end
+
+createGui()
+mainLoop()
